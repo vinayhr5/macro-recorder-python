@@ -1,14 +1,30 @@
 #!/usr/bin/env python3
-# Macro Recorder v2 (Python) - Enhanced
+# Macro Recorder v2 (Python) - Enhanced + Keyboard Shortcuts
 # Additions over v1:
 # - Multi-monitor template matching (search across all monitors)
 # - Multi-scale template matching (user-configurable scales, ex: 0.85,0.9,1.0,1.1)
 # - "Wait for Image" step with timeout (conditional flow)
 # - Window restore (records active window geometry at start; optionally restores before playback)
 # - UI controls for match threshold, scales, and monitor search
+# - Keyboard shortcuts for common actions (see list below)
+#
+# Shortcuts:
+#   Recording & Playback:
+#     Ctrl+Shift+R -> Record,   Esc -> Stop,   Ctrl+Enter -> Play
+#   File:
+#     Ctrl+N -> New,  Ctrl+O -> Open...,  Ctrl+S -> Save...
+#   Edit rows:
+#     Alt+Up / Alt+Down -> Move Up / Move Down
+#     Delete -> Delete row
+#     Ctrl+E -> Edit Delay,  Ctrl+Shift+E -> Edit Text/URL
+#   Add steps:
+#     Ctrl+W -> + Wait,  Ctrl+T -> + Type Text,  Ctrl+L -> + Open URL
+#     Ctrl+Shift+P -> Screenshot,  Ctrl+Shift+O -> OCR Region,  Ctrl+I -> Wait for Image
+#   Toggles:
+#     Ctrl+G -> Toggle Smart Click,  Ctrl+M -> Toggle Search all monitors,  Ctrl+Shift+W -> Toggle Restore window
 #
 # Optional deps: pywinctl for window restore
-# See README_v2.md for details.
+# See README for details.
 
 import sys, json, time, base64, threading, webbrowser
 from dataclasses import dataclass, field
@@ -108,7 +124,7 @@ def np_from_b64_png(b64: str) -> Optional["np.ndarray"]:
 
 def screen_regions():
     """Yield (monitor_dict, np_image_bgra) for each monitor; primary first."""
-    if not (HAVE_MSS and HAVE_NP):
+    if not (HAVE_MSS and HAVE_NP): 
         return
     with mss.mss() as sct:
         for i, mon in enumerate(sct.monitors[1:], start=1):
@@ -125,23 +141,20 @@ def grab_region(x:int,y:int,w:int,h:int) -> Optional["np.ndarray"]:
 
 def find_template_any_monitor(template_rgba: "np.ndarray", threshold: float, scales: List[float], search_all: bool=True) -> Optional[Tuple[int,int,float,float]]:
     """Return (abs_x, abs_y, score, scale) of best match or None."""
-    if not (HAVE_CV2 and HAVE_NP and HAVE_MSS):
+    if not (HAVE_CV2 and HAVE_NP and HAVE_MSS): 
         return None
-    best = (None, -1.0, 1.0, (0,0))  # (loc, score, scale, offset)
-    for mon, arr in screen_regions():
-        # restrict to first monitor if search_all is False
-        if not search_all and (mon is not list(screen_regions())[0]):
-            # This inefficient line would consume generator; instead handle separately:
-            pass
-    # Re-implement to avoid generator consumption:
+    # Collect screens (respect 'search_all')
     screens = []
-    if not (HAVE_MSS and HAVE_NP):
-        return None
     with mss.mss() as sct:
         mons = [sct.monitors[1]] if not search_all else sct.monitors[1:]
         for mon in mons:
             img = sct.grab(mon)
             screens.append((mon, np.array(img)))
+
+    best_loc = None
+    best_score = -1.0
+    best_scale = 1.0
+    best_offs = (0, 0)
 
     for mon, screen_bgra in screens:
         scr = cv2.cvtColor(screen_bgra, cv2.COLOR_BGRA2BGR)
@@ -154,20 +167,20 @@ def find_template_any_monitor(template_rgba: "np.ndarray", threshold: float, sca
                 if tmpl.shape[2] == 4:
                     tmpl = cv2.cvtColor(tmpl, cv2.COLOR_RGBA2BGR)
                 res = cv2.matchTemplate(scr, tmpl, cv2.TM_CCOEFF_NORMED)
-                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-                if max_val > best[1]:
-                    best = (max_loc, max_val, sc, (mon["left"], mon["top"]))
+                _min_val, max_val, _min_loc, max_loc = cv2.minMaxLoc(res)
+                if max_val > best_score:
+                    best_loc = max_loc
+                    best_score = max_val
+                    best_scale = sc
+                    best_offs = (mon["left"], mon["top"])
             except Exception:
                 continue
 
-    loc, score, sc, offs = best
-    if loc is None:
+    if best_loc is None or best_score < threshold:
         return None
-    if score >= threshold:
-        abs_x = offs[0] + loc[0]
-        abs_y = offs[1] + loc[1]
-        return (abs_x, abs_y, score, sc)
-    return None
+    abs_x = best_offs[0] + best_loc[0]
+    abs_y = best_offs[1] + best_loc[1]
+    return (abs_x, abs_y, best_score, best_scale)
 
 # ---------- Recorder ----------
 
@@ -409,8 +422,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if missing: self.status.showMessage("Missing optional deps: " + ", ".join(missing))
 
         self._build_menus()
+        self._install_shortcuts()  # <-- add keyboard shortcuts
 
-        # connect
+        # connect buttons
         self.btn_record.clicked.connect(self.start_record)
         self.btn_stop.clicked.connect(self.stop_all)
         self.btn_play.clicked.connect(self.start_play)
@@ -431,11 +445,56 @@ class MainWindow(QtWidgets.QMainWindow):
     def _build_menus(self):
         bar = self.menuBar()
         fm = bar.addMenu("&File")
-        a_new = fm.addAction("New"); a_open=fm.addAction("Open..."); a_save=fm.addAction("Save..."); fm.addSeparator(); a_quit=fm.addAction("Quit")
-        a_new.triggered.connect(self.clear_all); a_open.triggered.connect(self.load_macro); a_save.triggered.connect(self.save_macro); a_quit.triggered.connect(self.close)
+        self.act_new = fm.addAction("New")
+        self.act_open = fm.addAction("Open...")
+        self.act_save = fm.addAction("Save...")
+        fm.addSeparator()
+        self.act_quit = fm.addAction("Quit")
+
+        # file action shortcuts
+        self.act_new.setShortcut(QtGui.QKeySequence("Ctrl+N"))
+        self.act_open.setShortcut(QtGui.QKeySequence("Ctrl+O"))
+        self.act_save.setShortcut(QtGui.QKeySequence("Ctrl+S"))
+        self.act_quit.setShortcut(QtGui.QKeySequence("Ctrl+Q"))
+
+        self.act_new.triggered.connect(self.clear_all)
+        self.act_open.triggered.connect(self.load_macro)
+        self.act_save.triggered.connect(self.save_macro)
+        self.act_quit.triggered.connect(self.close)
+
         hm = bar.addMenu("&Help")
-        a_about = hm.addAction("About"); a_about.triggered.connect(lambda: QtWidgets.QMessageBox.information(self,"About",
-            "Macro Recorder v2\nMulti-monitor, multi-scale visual anchors, Wait-for-Image step, window restore."))
+        a_about = hm.addAction("About")
+        a_about.triggered.connect(lambda: QtWidgets.QMessageBox.information(
+            self,"About",
+            "Macro Recorder v2\nMulti-monitor, multi-scale visual anchors, Wait-for-Image step, window restore.\n"
+            "See README for full shortcut list."
+        ))
+
+    def _install_shortcuts(self):
+        # Recording / playback
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Shift+R"), self, self.start_record)
+        QtGui.QShortcut(QtGui.QKeySequence(Qt.Key_Escape), self, self.stop_all)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Return"), self, self.start_play)
+
+        # Add steps
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.add_wait)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+T"), self, self.add_text)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+L"), self, self.add_url)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Shift+P"), self, self.add_screenshot)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Shift+O"), self, self.add_ocr)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+I"), self, self.add_wait_image)
+
+        # Edit rows
+        QtGui.QShortcut(QtGui.QKeySequence("Alt+Up"), self, self.move_up)
+        QtGui.QShortcut(QtGui.QKeySequence("Alt+Down"), self, self.move_down)
+        QtGui.QShortcut(QtGui.QKeySequence(Qt.Key_Delete), self, self.delete_selected)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+E"), self, self.edit_delay)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Shift+E"), self, self.edit_text)
+
+        # Toggles for checkboxes
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+G"), self, lambda: self.chk_anchor.setChecked(not self.chk_anchor.isChecked()))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+M"), self, lambda: self.chk_allmons.setChecked(not self.chk_allmons.isChecked()))
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Shift+W"), self, lambda: self.chk_restore.setChecked(not self.chk_restore.isChecked()))
 
     # utilities
     def _current_row(self):
@@ -467,7 +526,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.events.append(MacroEvent("window_restore", 0.05, data)); self.table.add_event(self.events[-1])
             except Exception:
                 pass
-        self.status.showMessage("Recording... Press Stop to finish.")
+        self.status.showMessage("Recording... Press Stop (Esc) to finish.")
         self.btn_record.setEnabled(False); self.btn_stop.setEnabled(True); self.btn_play.setEnabled(False)
         self.recorder.start()
 
@@ -515,7 +574,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # full primary
             with mss.mss() as sct:
                 mon = sct.monitors[1]; img = np.array(sct.grab(mon))
-        if img is None:
+        if img is None: 
             QtWidgets.QMessageBox.warning(self,"Screenshot","Failed to capture."); return
         self._add(MacroEvent("screenshot", 0.1, {"image_b64": b64_png_from_np(img)}))
         self.status.showMessage("Screenshot step added.", 3000)
@@ -632,7 +691,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.playing=True; self.stop_flag=False
         self.btn_record.setEnabled(False); self.btn_stop.setEnabled(True); self.btn_play.setEnabled(False)
         self.status.showMessage("Playing macro...")
-        # Use single pass (repeat can be added similarly to v1)
         speed = 1.0
         threshold = float(self.spn_thresh.value())
         scales = self._parse_scales()
@@ -641,7 +699,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         def runner():
             try:
-                # attempt window restore if first event is window_restore
                 if restore:
                     for ev in self.events:
                         if ev.etype=="window_restore":
@@ -758,7 +815,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         QtWidgets.QApplication.clipboard().setText(text)
                         self.status.showMessage("OCR result copied to clipboard.",3000)
             elif et=="open_url":
-                url = d.get("url","");
+                url = d.get("url",""); 
                 if url: webbrowser.open(url)
             elif et=="wait_for_image":
                 b64 = d.get("anchor_b64",""); timeout = float(d.get("timeout",30.0))
@@ -773,7 +830,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     time.sleep(0.2)
                 if not found:
                     self.status.showMessage("Wait-for-Image: timeout reached.",4000)
-                    # continue flow (non-fatal). Could add branching later if needed.
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
