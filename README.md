@@ -94,7 +94,7 @@ OCR: pytesseract + Tesseract binary.
 Window control (optional): pywinctl.
 
 Event schema (JSON):
-
+```bash
 json
 {
   "etype": "mouse_click",
@@ -114,17 +114,14 @@ data = event-specific payload.
 
 📦 Installation
 Requirements
-
 Python 3.10+
-
 OS: Windows / macOS / Linux
-
 On Linux, X11/Xorg is recommended for global hooks; Wayland may limit functionality.
 
 Install
 
-bash
 # 1) Clone
+```bash
 git clone https://github.com/<you>/macro-recorder-python.git
 cd macro-recorder-python
 
@@ -147,34 +144,23 @@ macOS: brew install tesseract
 Linux (Debian/Ubuntu): sudo apt-get install tesseract-ocr
 
 ▶️ Usage
-bash
+```bash
 python macro_recorder_v2.py
 Typical flow
 
 Record – click “● Record” and perform your actions.
-
 Stop – click “⏹ Stop”.
-
 Edit – reorder/delete steps; tweak “Delay (s)”; edit Text/URL.
-
 Add Steps – Wait, Type Text, Open URL, Screenshot, OCR, Wait-for-Image.
-
 Smart Click – leave enabled to anchor clicks visually.
-
 Play – hit “▶ Play” to replay.
-
 Save/Load – store macro as JSON and reuse any time.
 
 Options bar
-
 Smart Click (visual) – enable/disable anchor-based clicking.
-
 Search all monitors – include all screens in matching.
-
 Match threshold – 0.5–0.99 (default 0.87).
-
 Scales – comma-separated (e.g. 0.85,0.9,1.0,1.1,1.2).
-
 Restore active window – relocate/resize the recorded window (if pywinctl present).
 
 🧯 Troubleshooting
@@ -209,13 +195,13 @@ Avoid recording credentials or sensitive data whenever possible.
 📦 Building Releases (optional)
 Windows (.exe) with PyInstaller
 
-bash
+```bash
 pip install pyinstaller
 pyinstaller --noconsole --onefile --name "MacroRecorder" macro_recorder_v2.py
 # Result: dist/MacroRecorder.exe
 macOS app bundle
 
-bash
+```bash
 pyinstaller --windowed --name "MacroRecorder" macro_recorder_v2.py
 # Result: dist/MacroRecorder.app
 Linux AppImage
@@ -223,13 +209,9 @@ Consider pyinstaller + appimagetool (outside the scope of this README).
 
 🧭 Roadmap
 Per-step branching (IF/ELSE on image match, timeouts).
-
 Re-add repeat/speed controls in the v2 UI (present in v1).
-
 Accessibility API targets (beyond image matching).
-
 Multi-scale pyramid + mask-aware template matching for even more robustness.
-
 Import/export from popular macro tools.
 
 🤝 Contributing
@@ -237,11 +219,8 @@ PRs welcome!
 Please keep features cross-platform when possible and avoid breaking the macro JSON schema.
 
 Ideas
-
 CI for linting on PRs (ruff/black).
-
 Unit tests for event serialization and image matching helpers.
-
 Localized UI strings.
 
 🧾 License
@@ -249,13 +228,8 @@ MIT — see LICENSE.
 
 🙌 Acknowledgements
 PySide6 (Qt for Python) – GUI
-
 OpenCV, NumPy, MSS, Pillow – vision & screen capture
-
 pynput – recording hooks
-
 pyautogui – playback
-
 pytesseract + Tesseract – OCR
-
 pywinctl – optional window management
