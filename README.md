@@ -1,6 +1,7 @@
 # Macro Recorder (Python)
 
-![Hero](screenshots/hero.png)
+<img width="1197" height="786" alt="image" src="https://github.com/user-attachments/assets/2330f4e4-a502-45e2-bc5e-28fab91abc1a" />
+
 
 [![Made with Python](https://img.shields.io/badge/Made%20with-Python-3776AB.svg)](https://www.python.org/)
 [![GUI: PySide6](https://img.shields.io/badge/GUI-PySide6-41CD52)](https://doc.qt.io/qtforpython/)
@@ -37,19 +38,6 @@
 - **Save/Load** macros – portable JSON format for version control.
 
 ---
-
-## 🖼️ Screenshots & Demo
-
-> Replace the placeholder files in `screenshots/` with your own captures.
-
-**Main window**  
-![Main Window](screenshots/main-window.png)
-
-**Smart Click (visual anchor) flow**  
-![Smart Click](screenshots/anchor.png)
-
-**Demo GIF (record → edit → play)**  
-![Demo GIF](screenshots/demo.gif)
 
 ### How to capture a GIF (two easy options)
 
