@@ -1,93 +1,83 @@
-# macro-recorder-python
-Cross-platform GUI macro recorder with smart visual clicks (OpenCV), multi-monitor &amp; multi-scale matching, wait-for-image, screenshots, OCR, and window restore.
+# Macro Recorder (Python)
 
-# Macro Recorder(Python)
+![Hero](screenshots/hero.png)
 
-- **Multi-monitor** template matching (search all screens)
-- **Multi-scale** matching with configurable scales (handles small UI scale changes)
-- **Wait for Image** conditional step with timeout
-- **Window restore** (records current active window geometry; optionally restores before playback)
-- Tunable **match threshold** in the UI
+[![Made with Python](https://img.shields.io/badge/Made%20with-Python-3776AB.svg)](https://www.python.org/)
+[![GUI: PySide6](https://img.shields.io/badge/GUI-PySide6-41CD52)](https://doc.qt.io/qtforpython/)
+[![Vision: OpenCV](https://img.shields.io/badge/Vision-OpenCV-5C3EE8)](https://opencv.org/)
+[![Input: pynput](https://img.shields.io/badge/Input-pynput-20232a.svg)](https://pynput.readthedocs.io/)
+[![Playback: pyautogui](https://img.shields.io/badge/Playback-pyautogui-20232a.svg)](https://pyautogui.readthedocs.io/)
+[![OCR: Tesseract](https://img.shields.io/badge/OCR-Tesseract-3949AB.svg)](https://github.com/tesseract-ocr/tesseract)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-## Install
-```bash
-pip install -r requirements_v2.txt
+> Cross-platform GUI macro recorder with **smart visual clicks (OpenCV)**, **multi-monitor & multi-scale matching**, **Wait-for-Image** steps, **screenshots**, **OCR**, and optional **window restore**.
 
-✨ Highlights
+---
 
-No-code desktop automation: record & replay mouse and keyboard.
+## 📌 Quick links
 
-Smart Clicks that survive layout shifts using visual anchors.
+- **Download / Clone**: `git clone https://github.com/<you>/macro-recorder-python.git`
+- **Run**: `python macro_recorder_v2.py`
+- **Requirements**: See [Installation](#-installation)
+- **Issues**: [Open an issue](https://github.com/<you>/macro-recorder-python/issues)
 
-Multi-monitor + multi-scale matching (DPI/zoom tolerant).
+---
 
-Wait-for-Image step for conditional flows.
+## ✨ Features
 
-Screenshots & OCR (Tesseract) as first-class steps.
+- **No-code desktop automation** – record & replay **mouse** and **keyboard**.
+- **Smart Clicks (visual anchors)** – robust to layout shifts; uses OpenCV template matching.
+- **Multi-monitor & multi-scale** search – handles multiple screens and small DPI/zoom changes.
+- **Wait-for-Image** step – block until a UI element appears (with timeout) instead of fixed sleeps.
+- **Screenshot step** – capture full screen or a region; saved to files during playback.
+- **OCR Region** – extract text to clipboard (requires Tesseract).
+- **Window Restore (optional)** – record active window geometry and restore before playback.
+- **Built-in macro editor** – reorder/delete steps; edit delays; edit text/URL.
+- **Save/Load** macros – portable JSON format for version control.
 
-Window restore (record active window geometry and restore on playback).
+---
 
-Simple macro editor: reorder, delete, edit delays & text/URL.
+## 🖼️ Screenshots & Demo
 
-JSON save/load for your macros.
+> Replace the placeholder files in `screenshots/` with your own captures.
 
-🧩 Features
-Recording
+**Main window**  
+![Main Window](screenshots/main-window.png)
 
-Global mouse move/click/scroll and keyboard capture.
+**Smart Click (visual anchor) flow**  
+![Smart Click](screenshots/anchor.png)
 
-Per-event delay (ts) is recorded for timing fidelity.
+**Demo GIF (record → edit → play)**  
+![Demo GIF](screenshots/demo.gif)
 
-Playback
+### How to capture a GIF (two easy options)
 
-Uses pyautogui to replay actions.
+- **Windows:** use [ScreenToGif](https://www.screentogif.com/) and export to `screenshots/demo.gif`.
+- **ffmpeg (any OS):**
+  ```bash
+  # record a short mp4 with your screen tool (e.g. OBS) to demo.mp4
+  # then convert to a compact GIF:
+  ffmpeg -i demo.mp4 -vf "fps=10,scale=1024:-1:flags=lanczos" -loop 0 screenshots/demo.gif
+🧩 Architecture (high level)
+GUI: PySide6 (Qt for Python).
 
-Honors per-event delays (you can edit them).
+Recording: pynput global hooks (mouse/keyboard).
 
-Optional window restore before playback (via pywinctl).
+Playback: pyautogui for mouse/keyboard actions.
 
-Smart Click (Visual Anchor)
+Screen Capture: mss (+ Pillow, numpy).
 
-On mouse press events (when enabled), a small image patch around the click is stored.
+Smart Clicks: OpenCV matchTemplate across monitors and scales.
 
-On playback, OpenCV template matching finds that region:
+OCR: pytesseract + Tesseract binary.
 
-Multi-monitor search (all screens)
+Window control (optional): pywinctl.
 
-Multi-scale (e.g., 0.85,0.9,1.0,1.1,1.2) for DPI/zoom changes
+Event schema (JSON):
 
-Tunable threshold (default 0.87)
-
-Falls back to absolute X/Y if visual match isn’t available.
-
-Wait-for-Image (Conditional)
-
-Inserts a step that repeatedly searches the screen for a captured snippet until it appears or a timeout is reached.
-
-Useful to synchronize with app states without hardcoded sleeps.
-
-Screenshots & OCR
-
-Screenshot step (full screen or region). Saves the captured image during playback.
-
-OCR Region step: extracts text from a region into clipboard (requires Tesseract).
-
-Editor
-
-Reorder, delete, clear all.
-
-Edit Delay for any row.
-
-Edit Text/URL for text typing and open-URL steps.
-
-Save / Load
-
-Macros are plain JSON (one event per row). Easy to version control.
-
-🛠️ How It Works (Under the Hood)
-
-Event model:
-
+json
+Copy code
 {
   "etype": "mouse_click",
   "ts": 0.134,
@@ -100,51 +90,28 @@ Event model:
     "anchor_offset": [35, 35]
   }
 }
+etype ∈ mouse_move | mouse_click | mouse_scroll | key_down | key_up | text | wait | screenshot | ocr_region | open_url | wait_for_image | window_restore
+ts = delay before event (seconds).
+data = event-specific payload.
 
-
-etype: "mouse_move" | "mouse_click" | "mouse_scroll" | "key_down" | "key_up" | "text" | "wait" | "screenshot" | "ocr_region" | "open_url" | "wait_for_image" | "window_restore"
-
-ts: delay before executing this event.
-
-data: event-specific fields (e.g., coordinates, text, URL, image anchor).
-
-Visual matching:
-
-Captured anchor (around the click) is matched via cv2.matchTemplate over one or more scales across one or more monitors (via mss).
-
-If score ≥ threshold → derived click point = match top-left + recorded offset.
-
-📦 Requirements
+📦 Installation
+Requirements
 
 Python 3.10+
 
 OS: Windows / macOS / Linux
 
-Pip packages (see requirements.txt):
+On Linux, X11/Xorg is recommended for global hooks; Wayland may limit functionality.
 
-PySide6
-pynput
-pyautogui
-mss
-numpy
-opencv-python
-pillow
-pytesseract
-pywinctl
+Install
 
-
-OCR (optional): Install the Tesseract binary and ensure tesseract is on PATH.
-
-macOS: grant Accessibility permissions to allow input control & screen capture.
-Windows: you may get SmartScreen prompts; allow access.
-Linux: global input hooks may be limited on Wayland; X11/Xorg is typically required for full functionality.
-
-🚀 Installation
-# 1) Clone your repo
+bash
+Copy code
+# 1) Clone
 git clone https://github.com/<you>/macro-recorder-python.git
 cd macro-recorder-python
 
-# 2) Create & activate a venv (recommended)
+# 2) Optional: create a venv
 python -m venv .venv
 # Windows:
 .venv\Scripts\activate
@@ -153,129 +120,128 @@ source .venv/bin/activate
 
 # 3) Install deps
 pip install -r requirements.txt
+OCR (optional)
+Install the Tesseract binary for your platform and ensure tesseract works in your terminal.
 
-OCR support (optional)
+Windows: Install from the Tesseract project (add to PATH).
 
-Install Tesseract for your platform (ensure tesseract command works in the terminal).
+macOS: brew install tesseract
 
-Then the OCR Region step will copy recognized text to the clipboard.
+Linux (Debian/Ubuntu): sudo apt-get install tesseract-ocr
 
-▶️ Run
+▶️ Usage
+bash
+Copy code
 python macro_recorder_v2.py
+Typical flow
 
+Record – click “● Record” and perform your actions.
 
-Typical flow:
+Stop – click “⏹ Stop”.
 
-Click Record (window may also be captured in window-restore step).
+Edit – reorder/delete steps; tweak “Delay (s)”; edit Text/URL.
 
-Perform your actions in any app.
+Add Steps – Wait, Type Text, Open URL, Screenshot, OCR, Wait-for-Image.
 
-Click Stop.
+Smart Click – leave enabled to anchor clicks visually.
 
-Review/edit steps in the table (tweak delays, add Text/URL, Screenshot, OCR, Wait-for-Image, etc.).
+Play – hit “▶ Play” to replay.
 
-Click Play to replay the macro.
+Save/Load – store macro as JSON and reuse any time.
 
-Save as JSON for reuse.
+Options bar
 
-Options bar:
+Smart Click (visual) – enable/disable anchor-based clicking.
 
-Smart Click (visual): toggle anchor-based clicking.
+Search all monitors – include all screens in matching.
 
-Search all monitors: include all screens in the image search.
+Match threshold – 0.5–0.99 (default 0.87).
 
-Match threshold: increase to reduce false positives (0.5–0.99).
+Scales – comma-separated (e.g. 0.85,0.9,1.0,1.1,1.2).
 
-Scales: comma-separated factors to search (e.g., 0.85,0.9,1.0,1.1).
-
-Restore active window: uses pywinctl to relocate/resize the original window.
-
-🧪 Macro JSON Example
-[
-  {
-    "etype": "window_restore",
-    "ts": 0.05,
-    "data": { "title": "My App", "x": 100, "y": 120, "w": 1280, "h": 800 }
-  },
-  {
-    "etype": "mouse_click",
-    "ts": 0.230,
-    "data": {
-      "x": 800, "y": 450,
-      "button": "Button.left", "pressed": true,
-      "anchor_b64": "<base64 PNG>", "anchor_offset": [35, 35]
-    }
-  },
-  {
-    "etype": "text",
-    "ts": 0.100,
-    "data": { "text": "Hello world!" }
-  }
-]
+Restore active window – relocate/resize the recorded window (if pywinctl present).
 
 🧯 Troubleshooting
+“Missing dependency” shown in status bar
+Run pip install -r requirements.txt.
 
-“Missing dependency” in status bar
-Install the listed packages (see requirements.txt).
+Clicks/typing blocked (macOS)
+System Settings → Privacy & Security → Accessibility → allow Terminal/Python/IDE.
+Also allow Screen Recording if prompted.
 
-Nothing types/clicks on macOS
-System Settings → Privacy & Security → Accessibility → allow Python/Terminal & your IDE.
+Smart Click can’t find target
 
-Smart Click doesn’t find target
+Lower threshold (e.g., 0.82).
 
-Lower the threshold slightly (e.g., 0.82).
+Add more scales (0.75,0.85,0.9,1.0,1.1,1.2).
 
-Add more scales (e.g., 0.75,0.85,0.9,1.0,1.1,1.2).
+Re-record click so the anchor contains distinctive UI features.
 
-Re-record the step so the anchor contains distinct UI context.
-
-OCR returns empty
-Confirm tesseract works in the terminal and the region has crisp text (zoom in if needed).
+OCR returns nothing
+Confirm tesseract runs in the terminal and your region is crisp/zoomed.
 
 Linux + Wayland
-pynput and global screen capture may be limited; use Xorg/X11 session if possible.
+Global hooks/screen capture may be limited; use Xorg session for full support.
 
 🔐 Security & Privacy
+Keystrokes/mouse events and small on-screen image patches (anchors/screenshots) are recorded locally only.
 
-Your keystrokes/mouse and small on-screen image anchors are recorded locally.
+Treat saved macros as sensitive — they can contain base64-embedded images and typed text.
 
-Be mindful when recording sensitive information.
+Avoid recording credentials or sensitive data whenever possible.
 
-Macro JSON may embed base64 PNGs (anchors/screenshots) — treat files as sensitive.
+📦 Building Releases (optional)
+Windows (.exe) with PyInstaller
+
+bash
+Copy code
+pip install pyinstaller
+pyinstaller --noconsole --onefile --name "MacroRecorder" macro_recorder_v2.py
+# Result: dist/MacroRecorder.exe
+macOS app bundle
+
+bash
+Copy code
+pyinstaller --windowed --name "MacroRecorder" macro_recorder_v2.py
+# Result: dist/MacroRecorder.app
+Linux AppImage
+Consider pyinstaller + appimagetool (outside the scope of this README).
 
 🧭 Roadmap
+Per-step branching (IF/ELSE on image match, timeouts).
 
-Per-step branching (IF/ELSE on image matches / timeouts).
+Re-add repeat/speed controls in the v2 UI (present in v1).
 
-Repeat/Speed controls in v2 UI (v1 had a simple repeat; re-add here).
+Accessibility API targets (beyond image matching).
 
-Element handles via platform accessibility APIs.
+Multi-scale pyramid + mask-aware template matching for even more robustness.
 
-Multi-scale pyramid + mask-aware template matching for robustness.
-
-Export/import to additional macro formats.
+Import/export from popular macro tools.
 
 🤝 Contributing
-
 PRs welcome!
-Guidelines:
+Please keep features cross-platform when possible and avoid breaking the macro JSON schema.
 
-Keep features cross-platform when possible (Windows/macOS/Linux).
+Ideas
 
-Avoid breaking changes to the macro JSON schema.
+CI for linting on PRs (ruff/black).
 
-Add comments & small unit tests where feasible.
+Unit tests for event serialization and image matching helpers.
+
+Localized UI strings.
+
+🧾 License
+MIT — see LICENSE.
 
 🙌 Acknowledgements
+PySide6 (Qt for Python) – GUI
 
-PySide6 (Qt for Python) for the GUI
+OpenCV, NumPy, MSS, Pillow – vision & screen capture
 
-OpenCV, NumPy, MSS, Pillow for vision & screen capture
+pynput – recording hooks
 
-pynput for global input hooks
+pyautogui – playback
 
-pyautogui for playback
+pytesseract + Tesseract – OCR
 
-pytesseract + Tesseract for OCR
-
-pywinctl for optional window management
+pywinctl – optional window management
