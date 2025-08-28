@@ -1,0 +1,9 @@
+PySide6
+pynput
+pyautogui
+mss
+numpy
+opencv-python
+pillow
+pytesseract
+pywinctl
