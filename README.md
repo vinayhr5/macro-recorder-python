@@ -38,6 +38,54 @@
 - **Save/Load** macros – portable JSON format for version control.
 
 ---
+Shortcuts included (when app window is focused):
+
+Recording & playback
+
+Ctrl+Shift+R → Record
+
+Esc → Stop (recording or playback)
+
+Ctrl+Enter → Play
+
+File
+
+Ctrl+N → New (clear all)
+
+Ctrl+O → Open…
+
+Ctrl+S → Save…
+
+Edit rows
+
+Alt+Up / Alt+Down → Move Up / Move Down
+
+Delete → Delete selected row
+
+Ctrl+E → Edit Delay
+
+Ctrl+Shift+E → Edit Text/URL
+
+Add steps
+
+Ctrl+W → + Wait
+
+Ctrl+T → + Type Text
+
+Ctrl+L → + Open URL (L = link)
+
+Ctrl+Shift+P → 📸 Screenshot
+
+Ctrl+Shift+O → 🔎 OCR Region
+
+Ctrl+I → + Wait for Image
+
+Toggles
+
+Ctrl+G → Toggle Smart Click (visual)
+
+Ctrl+M → Toggle Search all monitors
+--------------
 
 ### How to capture a GIF (two easy options)
 
