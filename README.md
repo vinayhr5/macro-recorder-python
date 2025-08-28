@@ -78,6 +78,7 @@ Ctrl+M → Toggle Search all monitors
   # record a short mp4 with your screen tool (e.g. OBS) to demo.mp4
   # then convert to a compact GIF:
   ffmpeg -i demo.mp4 -vf "fps=10,scale=1024:-1:flags=lanczos" -loop 0 screenshots/demo.gif
+  ```
 🧩 Architecture (high level)
 GUI: PySide6 (Qt for Python).
 
@@ -111,6 +112,7 @@ json
 etype ∈ mouse_move | mouse_click | mouse_scroll | key_down | key_up | text | wait | screenshot | ocr_region | open_url | wait_for_image | window_restore
 ts = delay before event (seconds).
 data = event-specific payload.
+```
 
 📦 Installation
 Requirements
@@ -124,6 +126,7 @@ Install
 ```bash
 git clone https://github.com/<you>/macro-recorder-python.git
 cd macro-recorder-python
+```
 
 # 2) Optional: create a venv
 python -m venv .venv
@@ -146,6 +149,7 @@ Linux (Debian/Ubuntu): sudo apt-get install tesseract-ocr
 ▶️ Usage
 ```bash
 python macro_recorder_v2.py
+```
 Typical flow
 
 Record – click “● Record” and perform your actions.
@@ -199,10 +203,12 @@ Windows (.exe) with PyInstaller
 pip install pyinstaller
 pyinstaller --noconsole --onefile --name "MacroRecorder" macro_recorder_v2.py
 # Result: dist/MacroRecorder.exe
+```
 macOS app bundle
 
 ```bash
 pyinstaller --windowed --name "MacroRecorder" macro_recorder_v2.py
+```
 # Result: dist/MacroRecorder.app
 Linux AppImage
 Consider pyinstaller + appimagetool (outside the scope of this README).
