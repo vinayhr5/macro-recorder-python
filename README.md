@@ -85,6 +85,7 @@ Toggles
 Ctrl+G → Toggle Smart Click (visual)
 
 Ctrl+M → Toggle Search all monitors
+
 --------------
 
 ### How to capture a GIF (two easy options)
@@ -113,7 +114,6 @@ Window control (optional): pywinctl.
 Event schema (JSON):
 
 json
-Copy code
 {
   "etype": "mouse_click",
   "ts": 0.134,
@@ -142,7 +142,6 @@ On Linux, X11/Xorg is recommended for global hooks; Wayland may limit functional
 Install
 
 bash
-Copy code
 # 1) Clone
 git clone https://github.com/<you>/macro-recorder-python.git
 cd macro-recorder-python
@@ -167,7 +166,6 @@ Linux (Debian/Ubuntu): sudo apt-get install tesseract-ocr
 
 ▶️ Usage
 bash
-Copy code
 python macro_recorder_v2.py
 Typical flow
 
@@ -230,14 +228,12 @@ Avoid recording credentials or sensitive data whenever possible.
 Windows (.exe) with PyInstaller
 
 bash
-Copy code
 pip install pyinstaller
 pyinstaller --noconsole --onefile --name "MacroRecorder" macro_recorder_v2.py
 # Result: dist/MacroRecorder.exe
 macOS app bundle
 
 bash
-Copy code
 pyinstaller --windowed --name "MacroRecorder" macro_recorder_v2.py
 # Result: dist/MacroRecorder.app
 Linux AppImage
